@@ -49,3 +49,5 @@ O workflow usa `GITHUB_TOKEN`; nenhum token pessoal deve ser salvo no código. A
 Uso não comercial. O motor inclui fontes VATSIM Radar sob CC BY-NC 4.0, preservados em `engine/vendor`, e dependências com licenças próprias em `packaging/licenses`. Consulte [ATRIBUICOES.md](ATRIBUICOES.md). A imagem do mascote fornecida pelo usuário não recebe licença adicional por estar neste repositório.
 
 Não versionar logs, planos SimBrief, preferências, credenciais, DLLs do SDK, dependências instaladas ou binários de build. `.gitignore` exclui esses arquivos.
+
+A margem de saída no plugin é fixa em 15 NM. Em Preferências, marque **Não reconectar automaticamente, mesmo após sair 15 NM** para manter a reconexão manual. Desmarcado, o retorno após desconexão ATC feita pelo app exige duas consultas confirmando área livre além dos 15 NM. A opção é salva e não interrompe o monitoramento. Desconexões por descida ou Supervisor continuam sem retorno automático.

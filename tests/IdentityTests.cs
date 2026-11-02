@@ -19,7 +19,7 @@ class IdentityTests {
  Check(((Label)Field(w,"status")).ForeColor==ChuSoneca.UI.NightTheme.Yellow,"connected session awaiting data is yellow");
  w.NetworkDisconnected();Check(((Label)Field(w,"status")).ForeColor==ChuSoneca.UI.NightTheme.Red,"disconnected status is red");
  w.NetworkConnected("7654321","TEST5","A320","",false,"session5");Check(start.BackColor==ChuSoneca.UI.NightTheme.Green,"start action is green");
- ((CheckBox)Field(w,"exitAt10")).Checked=!((CheckBox)Field(w,"exitAt10")).Checked;Check(w.SelectedCid=="7654321","preference changes cannot replace session CID with display text");
+ m.Start();((CheckBox)Field(w,"disableAutoReconnect")).Checked=!((CheckBox)Field(w,"disableAutoReconnect")).Checked;Check(w.SelectedCid=="7654321"&&m.Armed&&m.DisableAutoReconnect==((CheckBox)Field(w,"disableAutoReconnect")).Checked,"preference changes cannot replace session CID with display text");
  Check(PluginUpdates.NewerVersion("{\"tag_name\":\"v0.7.3\"}",new Version(0,7,2,0))==new Version(0,7,3),"new stable release detected");
  Check(PluginUpdates.NewerVersion("{\"tag_name\":\"v0.7.2\"}",new Version(0,7,2,0))==null,"equal assembly revision does not trigger update");
  Check(PluginUpdates.NewerVersion("{\"tag_name\":\"v0.7.1\"}",new Version(0,7,2))==null,"older release ignored");
@@ -29,5 +29,8 @@ class IdentityTests {
  m.Start();var armed=m.Armed;var identity=w.SelectedCid;
  typeof(FlightWindow).GetMethod("ShowUpdate",BindingFlags.Instance|BindingFlags.NonPublic).Invoke(w,new object[]{new Version(0,7,3)});
  Check(((LinkLabel)Field(w,"updateNotice")).Text.Contains("v0.7.3")&&m.Armed==armed&&w.SelectedCid==identity,"update banner preserves monitoring and identity");
+ var serializer=new System.Web.Script.Serialization.JavaScriptSerializer();
+ var legacy=serializer.Deserialize<Preferences>("{\"ExitMarginNm\":10}");Check(!legacy.DisableAutoReconnect&&m.ExitMarginNm==15,"legacy 10 NM preference cannot change fixed 15 NM margin");
+ Check(serializer.Deserialize<Preferences>(serializer.Serialize(new Preferences{DisableAutoReconnect=true})).DisableAutoReconnect,"manual reconnect preference persists");
  w.Shutdown();}return 0;}catch(Exception ex){Console.Error.WriteLine(ex);return 1;}}
 }

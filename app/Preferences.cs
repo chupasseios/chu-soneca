@@ -1,9 +1,9 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Web.Script.Serialization;
 namespace FlightWatch {
  public sealed class Preferences {
-  public int ExitMarginNm {get;set;}=15;
+  public bool DisableAutoReconnect {get;set;}=false;
   public string Simbrief {get;set;}="";
   public string Cid {get;set;}="";
   public bool OpenWithVpilot {get;set;}=true;

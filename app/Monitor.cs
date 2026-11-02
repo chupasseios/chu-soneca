@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -28,7 +28,12 @@ namespace FlightWatch {
  public enum Effect { None, Alert, Disconnect, Reconnect, DescentAlert }
  public sealed class Monitor {
   public object BoundaryState;
-  public int ExitMarginNm=15;
+  public int ExitMarginNm=>15;
+  bool disableAutoReconnect;
+  public bool DisableAutoReconnect {
+   get=>disableAutoReconnect;
+   set {if(disableAutoReconnect==value)return;disableAutoReconnect=value;AwaitingReconnect=false;clearSince=-1;}
+  }
   static Controller[] Relevant(Coverage c)=>c.boundary?.controllers??new Controller[0];
   bool BoundaryValid(Coverage c)=>c.boundary!=null&&c.boundary.ready&&c.boundary.exitNm==ExitMarginNm;
   public bool Armed, Connected, OwnedDisconnect, AwaitingDisconnect, AwaitingReconnect;
@@ -62,7 +67,7 @@ namespace FlightWatch {
    Status="Supervisor confirmado: solicitando desconexão, sem retorno automático…";return Effect.Disconnect;
   }
   public bool CanCommand(bool reconnect,double now,bool accountUnchanged){
-   if(!Armed||!accountUnchanged||SessionCid!=SelectedCid||SessionId!=boundSession||!AirborneSafe(now))return false;
+   if((reconnect&&DisableAutoReconnect)||!Armed||!accountUnchanged||SessionCid!=SelectedCid||SessionId!=boundSession||!AirborneSafe(now))return false;
    if(SupervisorDisconnect)return !reconnect&&Connected&&AwaitingDisconnect&&now-DisconnectRequested>=0&&now<=supervisorValidUntil;
    if(!reconnect&&DescentDisconnect)return Connected&&AwaitingDisconnect&&DescentPending&&now-DisconnectRequested<=15;
    if(DescentPending)return false;
@@ -142,6 +147,7 @@ namespace FlightWatch {
      if(now>=Deadline&&c.Sampled>=Deadline){AwaitingDisconnect=true;DisconnectRequested=now;Deadline=-1;Status="Solicitando desconexão ao vPilot…";return Effect.Disconnect;}
     }else Status=keys.Count>0?"Em voo · presença confirmada":"Em voo · sem cobertura detectada";
    } else if(OwnedDisconnect){
+    if(DisableAutoReconnect){clearSince=-1;Status="Desconectado · reconexão automática desativada. Reconecte manualmente.";return Effect.None;}
     if(!c.clearConfirmed||!c.boundary.exitClear||keys.Count>0){clearSince=-1;Status=keys.Count>0?"Desconectado · ainda há cobertura ATC":"Desconectado · cobertura inconclusiva; retorno bloqueado";return Effect.None;}
     if(clearSince<0)clearSince=c.Sampled;
     Status="Fora da margem ATC · confirmando na próxima consulta";

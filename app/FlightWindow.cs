@@ -16,7 +16,7 @@ namespace FlightWatch {
  public sealed partial class FlightWindow:Form {
   readonly System.Collections.Generic.HashSet<Process> workers=new System.Collections.Generic.HashSet<Process>();readonly object workerGate=new object();
   readonly CheckBox openWithVpilot=new CheckBox{Text="Abrir com o vPilot",AutoSize=true};
-  readonly CheckBox exitAt10=new CheckBox{Text="Reconectar após sair 10 NM (desmarcado: 15 NM)",AutoSize=true};
+  readonly CheckBox disableAutoReconnect=new CheckBox{Text="Não reconectar automaticamente, mesmo após sair 15 NM",AutoSize=true};
   readonly CheckBox closeToTray=new CheckBox{Text="Ao fechar, manter na bandeja",AutoSize=true};
   readonly RecoverySchedule feedRecovery=new RecoverySchedule();
   readonly TextBox simbrief=new TextBox{Width=220};
@@ -57,7 +57,7 @@ namespace FlightWatch {
    mute.Click+=(s,e)=>{alarm.Stop();testAlarmUntil=-1;Render();};
    LoadHistory();
    LoadSettings();loading=false;
-   openWithVpilot.CheckedChanged+=(s,e)=>SaveSettings();closeToTray.CheckedChanged+=(s,e)=>SaveSettings();exitAt10.CheckedChanged+=(s,e)=>{if(loading)return;monitor.ExitMarginNm=exitAt10.Checked?10:15;Changed();};
+   openWithVpilot.CheckedChanged+=(s,e)=>SaveSettings();closeToTray.CheckedChanged+=(s,e)=>SaveSettings();disableAutoReconnect.CheckedChanged+=(s,e)=>{if(loading)return;monitor.DisableAutoReconnect=disableAutoReconnect.Checked;SaveSettings();Log(disableAutoReconnect.Checked?"Reconexão automática desativada. Reconecte manualmente.":"Reconexão automática habilitada após sair 15 NM e confirmar área livre.");Render();};
    start.Click+=(s,e)=>{if(!monitor.Connected||!System.Text.RegularExpressions.Regex.IsMatch(monitor.SessionCid??"","^[1-9][0-9]{3,9}$")){MessageBox.Show(this,"Aguarde a conexão do vPilot para identificar o CID automaticamente.");return;}
     monitor.SelectedCid=monitor.SessionCid;monitor.Start();epoch++;nextPoll=0;Log(monitor.Status);SaveSettings();};
    stop.Click+=(s,e)=>{EndHistory();monitor.Stop();epoch++;Log("Monitoramento parado pelo usuário.");Render();};
@@ -70,8 +70,8 @@ namespace FlightWatch {
    timer.Tick+=async(s,e)=>{try{await Tick();}catch(Exception ex){monitor.Stop();epoch++;alarm.Stop();Log("Falha tratada: "+ex.Message);Render();}};Render();
   }
   void Changed(){if(loading)return;EndHistory();monitor.Stop();epoch++;monitor.ApplyFlightPlan(null);nextPoll=0;Log("Configuração alterada. Reinicie o monitoramento.");SaveSettings();Render();}
-  void LoadSettings(){try{var p=Preferences.Read();simbrief.Text=p.Simbrief;openWithVpilot.Checked=p.OpenWithVpilot;closeToTray.Checked=p.CloseToTray;exitAt10.Checked=p.ExitMarginNm==10;monitor.ExitMarginNm=exitAt10.Checked?10:15;}catch{}}
-  void SaveSettings(){if(loading||demo)return;try{Directory.CreateDirectory(dataDir);File.WriteAllText(Path.Combine(dataDir,"preferences.json"),json.Serialize(new Preferences{Simbrief=simbrief.Text.Trim(),Cid="",OpenWithVpilot=openWithVpilot.Checked,CloseToTray=closeToTray.Checked,ExitMarginNm=monitor.ExitMarginNm}));}catch(Exception e){Log("Não foi possível salvar: "+e.Message);}}
+  void LoadSettings(){try{var p=Preferences.Read();simbrief.Text=p.Simbrief;openWithVpilot.Checked=p.OpenWithVpilot;closeToTray.Checked=p.CloseToTray;disableAutoReconnect.Checked=p.DisableAutoReconnect;monitor.DisableAutoReconnect=p.DisableAutoReconnect;}catch{}}
+  void SaveSettings(){if(loading||demo)return;try{Directory.CreateDirectory(dataDir);File.WriteAllText(Path.Combine(dataDir,"preferences.json"),json.Serialize(new Preferences{Simbrief=simbrief.Text.Trim(),Cid="",OpenWithVpilot=openWithVpilot.Checked,CloseToTray=closeToTray.Checked,DisableAutoReconnect=monitor.DisableAutoReconnect}));}catch(Exception e){Log("Não foi possível salvar: "+e.Message);}}
   string Fingerprint(){var config=Path.Combine(Directory.GetParent(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)).FullName,"vPilotConfig.xml");
    using(var reader=XmlReader.Create(config,new XmlReaderSettings{DtdProcessing=DtdProcessing.Prohibit,XmlResolver=null})){
     while(reader.Read()){if(reader.NodeType!=XmlNodeType.Element||reader.Name!="NetworkLogin")continue;string login=reader.ReadElementContentAsString();if(string.IsNullOrWhiteSpace(login))return "";using(var sha=SHA256.Create())return Convert.ToBase64String(sha.ComputeHash(Encoding.UTF8.GetBytes(login)));}return "";

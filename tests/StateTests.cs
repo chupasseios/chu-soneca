@@ -31,6 +31,12 @@ class Test {
   m=Setup();m.Telemetry.GroundSpeed=double.PositiveInfinity;Assert(m.Tick(1121,true)==Effect.None&&!m.InCruise,"nonfinite telemetry blocks");
   m=Setup();m.Tick(1121,true);m.Telemetry.OnGround=true;m.Telemetry.Received=1242;Fresh(m,1242,true);Assert(m.Tick(1242,true)==Effect.None&&m.Deadline<0,"ground cancels expired alert before disconnect");
   m=Setup();m.Tick(1121,true);Fresh(m,1242,true);m.Tick(1242,true);m.Disconnected(1243);Fresh(m,1300,false);m.Tick(1300,true);Fresh(m,1360,false);m.Telemetry.OnGround=true;Assert(m.Tick(1360,true)==Effect.None&&!m.OwnedDisconnect,"ground blocks scheduled reconnection");
+  m=Setup();m.DisableAutoReconnect=true;Assert(m.Tick(1121,true)==Effect.Alert,"manual return preference preserves ATC alert");Fresh(m,1242,true);Assert(m.Tick(1242,true)==Effect.Disconnect&&m.CanCommand(false,1242,true),"manual return preference preserves disconnect");m.Disconnected(1243);
+  Fresh(m,1300,false);Assert(m.Tick(1300,true)==Effect.None,"manual return blocks first clear sample");Fresh(m,1360,false);Assert(m.Tick(1360,true)==Effect.None&&!m.AwaitingReconnect&&m.Armed,"manual return remains offline after two clear samples");
+  m.AwaitingReconnect=true;Assert(!m.CanCommand(true,1360,true),"manual return blocks queued broker command");m.AwaitingReconnect=false;
+  m.DisableAutoReconnect=false;Fresh(m,1420,false);Assert(m.Tick(1420,true)==Effect.None,"enabling return requires new clear confirmation");Fresh(m,1480,false);Assert(m.Tick(1480,true)==Effect.Reconnect&&m.CanCommand(true,1480,true),"enabled return works after fresh clear samples");
+  m.DisableAutoReconnect=true;Assert(!m.AwaitingReconnect&&!m.CanCommand(true,1480,true),"changing preference cancels pending reconnect");
+  m=Setup();m.Tick(1121,true);Fresh(m,1242,true);m.Tick(1242,true);m.Disconnected(1243);Fresh(m,1300,false);m.Coverage.boundary.exitNm=10;Assert(m.Tick(1300,true)==Effect.None&&m.Coverage==null,"10 NM boundary rejected by fixed margin");
   Console.WriteLine(count+" assertions passed");NewFeaturesTests.Run();SupervisorStateTests.Run();RecoveryTests.Run();PlanTests.Run();BoundaryTests.Run();
  }
 }

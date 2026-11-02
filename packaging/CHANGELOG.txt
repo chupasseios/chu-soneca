@@ -1,3 +1,7 @@
+0.7.3
+- Margem de saída fixa em 15 NM; removida a opção de 10 NM.
+- Nova preferência para permanecer desconectado e reconectar apenas manualmente.
+
 0.7.2
 - Aviso de nova versão do plugin na tela, com acesso às releases do GitHub.
 - Consulta em segundo plano ao abrir e a cada 6 horas, independente do monitoramento.
