@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
@@ -52,7 +52,7 @@ namespace FlightWatch {
   public double Now=>1000+clock.Elapsed.TotalSeconds;
   public FlightWindow(bool isDemo){
    demo=isDemo;Text="Chu Soneca"+(demo?" · demonstração":" · vPilot");Font=new Font("Segoe UI",10);BackColor=Color.FromArgb(246,248,249);ForeColor=Color.FromArgb(26,37,42);
-   Button test,retry;BuildLayout(out test,out retry);
+   Button test,retry;BuildLayout(out test,out retry);InitializeUpdates();
    retry.Click+=(s,e)=>{if(!demo){monitor.InvalidateCoverage();monitor.Telemetry=null;telemetryError="";nextPoll=0;sim?.Open();Log("Nova tentativa manual de leitura do simulador.");Render();}};
    mute.Click+=(s,e)=>{alarm.Stop();testAlarmUntil=-1;Render();};
    LoadHistory();
@@ -166,6 +166,7 @@ namespace FlightWatch {
   }
   void DemoSetup(){cid.Text="1234567";NetworkConnected("1234567","DEMO123","A320","",false);monitor.Telemetry=new Telemetry{Altitude=35000,GroundSpeed=450,Received=Now,Latitude=-23,Longitude=-47};monitor.ApplyFlightPlan(new Plan{cid="1234567",callsign="DEMO123",altitude="35000"});monitor.Start();monitor.StableSince=Now-121;monitor.Coverage=new Coverage{ok=true,Received=Now,Sampled=Now,controllers=new[]{new Controller{cid="123456",callsign="DEMO_CTR",frequency="125.000",logon_time="demo"}}};monitor.Coverage.boundary=new Boundary{ready=true,exitNm=monitor.ExitMarginNm,inside=true,controllers=monitor.Coverage.controllers};nextPoll=Now+60;}
   public void RenderPreview(string file,string mode="--render"){
+   if(mode=="--render-update")ShowUpdate(new Version(0,7,3));
    if(!monitor.Connected)DemoSetup();monitor.Tick(Now,true);monitor.Tick(Now,true);
    var atc=new Controller{cid="123456",callsign="DEMO_CTR",frequency="125.000",logon_time=DateTime.UtcNow.AddHours(-1).ToString("o")};
    history.Observe(new Coverage{ok=true,controllers=new[]{atc},onlineControllers=new[]{atc}},DateTime.UtcNow.AddMinutes(-20),"DEMO123");
@@ -180,7 +181,7 @@ namespace FlightWatch {
    if(mode=="--render-settings")tabs.SelectedIndex=3;
    Render();using(var bitmap=new Bitmap(Width,Height)){DrawToBitmap(bitmap,new Rectangle(Point.Empty,Size));bitmap.Save(file,System.Drawing.Imaging.ImageFormat.Png);}
   }
-  void Cleanup(){if(closing)return;closing=true;epoch++;timer.Stop();monitor.Stop();EndHistory();alarm.Stop();sim?.Dispose();lock(workerGate){foreach(var p in workers)try{if(!p.HasExited)p.Kill();}catch{}}tray.Visible=false;tray.Dispose();}
+  void Cleanup(){if(closing)return;closing=true;epoch++;StopUpdates();timer.Stop();monitor.Stop();EndHistory();alarm.Stop();sim?.Dispose();lock(workerGate){foreach(var p in workers)try{if(!p.HasExited)p.Kill();}catch{}}tray.Visible=false;tray.Dispose();}
   public void Shutdown(){Cleanup();Close();}
   protected override void Dispose(bool disposing){if(disposing){Cleanup();timer.Dispose();alarm.Dispose();sim?.Dispose();tray.Dispose();}base.Dispose(disposing);}
  }

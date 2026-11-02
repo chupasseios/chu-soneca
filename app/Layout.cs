@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using ChuSoneca.UI;
 using System.Drawing;
 using System.Windows.Forms;
@@ -13,7 +13,7 @@ namespace FlightWatch {
 
   void BuildLayout(out Button test,out Button retry){
    ClientSize=new Size(1180,780);MinimumSize=new Size(1000,760);StartPosition=FormStartPosition.CenterScreen;AutoScaleMode=AutoScaleMode.Dpi;BackColor=NightTheme.Background;ForeColor=NightTheme.Ink;
-   var root=new TableLayoutPanel{Dock=DockStyle.Fill,Padding=new Padding(24),RowCount=2,ColumnCount=1};root.RowStyles.Add(new RowStyle(SizeType.Absolute,82));root.RowStyles.Add(new RowStyle(SizeType.Percent,100));Controls.Add(root);
+   var root=new TableLayoutPanel{Dock=DockStyle.Fill,Padding=new Padding(24),RowCount=3,ColumnCount=1};root.RowStyles.Add(new RowStyle(SizeType.Absolute,82));root.RowStyles.Add(new RowStyle(SizeType.AutoSize));root.RowStyles.Add(new RowStyle(SizeType.Percent,100));Controls.Add(root);
    var head=new TableLayoutPanel{Dock=DockStyle.Fill,ColumnCount=3,Margin=Padding.Empty};head.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute,78));head.ColumnStyles.Add(new ColumnStyle(SizeType.Percent,100));head.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
    var mascot=new PictureBox{Size=new Size(68,68),SizeMode=PictureBoxSizeMode.Zoom,Margin=new Padding(0,0,10,0),BackColor=Color.Transparent,AccessibleName="Mascote Chu Soneca",TabStop=false};
    var assembly=typeof(FlightWindow).Assembly;
@@ -21,7 +21,7 @@ namespace FlightWatch {
    using(var stream=assembly.GetManifestResourceStream("ChuSoneca.Icon")){if(stream!=null){Icon=new Icon(stream);tray.Icon=Icon;}}
    Disposed+=(s,e)=>{mascot.Image?.Dispose();Icon?.Dispose();};head.Controls.Add(mascot,0,0);
    var brand=new FlowLayoutPanel{FlowDirection=FlowDirection.TopDown,Dock=DockStyle.Fill,WrapContents=false,Margin=Padding.Empty};brand.Controls.Add(new Label{Text="Chu Soneca",AutoSize=true,Font=new Font("Segoe UI",25,FontStyle.Bold)});brand.Controls.Add(new Label{Text=demo?"Demonstração · dados fictícios · sem comandos reais":"Acompanhamento de ATC e presença durante o voo",AutoSize=true,ForeColor=NightTheme.Muted});head.Controls.Add(brand,1,0);zulu.Margin=new Padding(0,20,0,0);head.Controls.Add(zulu,2,0);root.Controls.Add(head,0,0);
-   var columns=new TableLayoutPanel{Dock=DockStyle.Fill,ColumnCount=2};columns.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute,250));columns.ColumnStyles.Add(new ColumnStyle(SizeType.Percent,100));root.Controls.Add(columns,0,1);
+   var columns=new TableLayoutPanel{Dock=DockStyle.Fill,ColumnCount=2};columns.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute,250));columns.ColumnStyles.Add(new ColumnStyle(SizeType.Percent,100));root.Controls.Add(updateNotice,0,1);root.Controls.Add(columns,0,2);
    var side=new SoftFlow{Dock=DockStyle.Fill,FlowDirection=FlowDirection.TopDown,WrapContents=false,AutoScroll=true,BackColor=NightTheme.Surface,Padding=new Padding(18),Margin=new Padding(0,0,20,0)};columns.Controls.Add(side,0,0);NightTheme.Round(side);
    side.Controls.Add(Caption("Identificação do voo",14,true));side.Controls.Add(Caption("CID do vPilot"));cid.Width=190;side.Controls.Add(cid);side.Controls.Add(new Label{Text="Identificação automática pela sessão do vPilot.",AutoSize=true,MaximumSize=new Size(190,0),ForeColor=NightTheme.Muted,Margin=new Padding(0,8,0,12)});
    side.Controls.Add(Caption("Cruzeiro do plano VATSIM"));planLevel.Margin=new Padding(0,0,0,16);side.Controls.Add(planLevel);

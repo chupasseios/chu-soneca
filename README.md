@@ -42,7 +42,7 @@ git tag -a v0.7.1 -m "Chu Soneca 0.7.1"
 git push origin v0.7.1
 ```
 
-O workflow usa `GITHUB_TOKEN`; nenhum token pessoal deve ser salvo no código. A permissão de escrita é restrita ao job de release. O instalador não possui atualização automática via GitHub ainda; as releases são baixadas manualmente.
+O workflow usa `GITHUB_TOKEN`; nenhum token pessoal deve ser salvo no código. A permissão de escrita é restrita ao job de release. O plugin consulta a última release estável ao abrir e a cada 6 horas. Quando há uma versão mais nova, mostra um aviso na tela com acesso às releases para baixar o instalador. Falhas de rede não interrompem o monitoramento. A instalação continua manual, com o vPilot fechado.
 
 ## Licenças e dados
 

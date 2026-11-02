@@ -1,3 +1,7 @@
+0.7.2
+- Aviso de nova versão do plugin na tela, com acesso às releases do GitHub.
+- Consulta em segundo plano ao abrir e a cada 6 horas, independente do monitoramento.
+
 Chu Soneca 0.7.1 — build e releases automáticos
 Pipeline GitHub Actions, versão centralizada e build sem instalação local do vPilot.
 
