@@ -1,0 +1,12 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {confirmSupervisor} from '../engine/supervisor.mjs';
+const now=Date.parse('2026-10-21T23:00:00Z');
+const entry={cid:1234567,callsign:'EXAMPLE_SUP',rating:11,logon_time:'2026-10-21T22:00:00Z'};
+const feed=(controllers=[entry],time=now)=>({general:{update_timestamp:new Date(time).toISOString()},controllers});
+test('exact sender matches a current unique rating 11 session',()=>assert.equal(confirmSupervisor(feed(),'example_sup',now,now).confirmed,true));
+test('suffix or message body cannot promote another rating',()=>{for(const rating of [1,10,12,'11'])assert.equal(confirmSupervisor(feed([{...entry,rating}]),'EXAMPLE_SUP',now,now).confirmed,false);});
+test('unknown sender, partial name and duplicate matches rejected',()=>{assert.equal(confirmSupervisor(feed(),'EXAMPLE',now,now).confirmed,false);assert.equal(confirmSupervisor(feed([]),'EXAMPLE_SUP',now,now).confirmed,false);assert.equal(confirmSupervisor(feed([entry,entry]),'EXAMPLE_SUP',now,now).confirmed,false);});
+test('stale or future feed, missing list and delayed message rejected',()=>{for(const data of [feed([entry],now-60001),feed([entry],now+5001),{general:feed().general}])assert.throws(()=>confirmSupervisor(data,'EXAMPLE_SUP',now,now));assert.throws(()=>confirmSupervisor(feed(),'EXAMPLE_SUP',now-30001,now));});
+test('session logged on after message cannot confirm previous sender',()=>assert.equal(confirmSupervisor(feed([{...entry,logon_time:new Date(now+1).toISOString()}]),'EXAMPLE_SUP',now,now).confirmed,false));
+test('unknown login time and invalid CID fail closed',()=>{assert.equal(confirmSupervisor(feed([{...entry,logon_time:null}]),'EXAMPLE_SUP',now,now).confirmed,false);assert.equal(confirmSupervisor(feed([{...entry,cid:0}]),'EXAMPLE_SUP',now,now).confirmed,false);});

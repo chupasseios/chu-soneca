@@ -1,0 +1,30 @@
+Chu Soneca 0.7.1 — build e releases automáticos
+Pipeline GitHub Actions, versão centralizada e build sem instalação local do vPilot.
+
+Chu Soneca 0.7.0 — controle relevante à rota
+
+Como usar:
+1. Conecte o vPilot (CID automático).
+2. Em Preferências, informe seu usuário ou Pilot ID SimBrief e clique Importar plano do SimBrief.
+3. Inicie o monitoramento. Reimporte a cada novo plano ou alteração de rota.
+
+A importação obtém o navlog com coordenadas e exige correspondência de callsign, origem, destino e rota VATSIM. Alterações de nível/velocidade não geram falsa divergência.
+Centros: somente polígonos que cruzam o trecho restante da rota são elegíveis; alerta na aproximação a 15 NM ou dentro da área.
+APP/DEP: círculo de 65 NM em torno do aeroporto associado. Não usa visual_range do controlador nem soma 15 NM ao raio.
+A posição do piloto e os controladores continuam sendo avaliados periodicamente. O SimBrief só é consultado ao clicar Importar, conforme a orientação da API.
+Preserva margem de saída 10/15 NM, duas amostras de confirmação, identidade e bloqueio no solo.
+Sem rota validada, ou a mais de 30 NM da rota importada, bloqueia decisões de ATC e solicita revisão da rota. Posições online sem geometria ainda impedem confirmar área livre.
+A detecção de descida e mensagens de Supervisor conserva suas regras independentes.
+O aplicativo de teste privado anterior não inclui a validação de rota desta versão.
+
+Validação: 41 testes Node, 120 verificações do monitoramento e 10 verificações de identidade/UI.
+Regressão validada: centro distante da rota descartado antes de avaliar alerta.
+Nenhuma conexão real foi alterada durante os testes.
+
+Fontes:
+https://github.com/VATSIM-Radar/vatsim-radar/blob/next/app/composables/vatsim/enroute.ts
+https://github.com/VATSIM-Radar/vatsim-radar/blob/next/app/composables/render/update/atc.ts
+https://github.com/VATSIM-Radar/vatsim-radar/blob/next/app/components/map/navigraph/NavigraphRoute.vue
+https://forum.navigraph.com/t/fetching-a-users-latest-ofp-data/5297
+
+0.7.1: adm-zip atualizado para 0.6.1; npm audit sem vulnerabilidades reportadas na validação.

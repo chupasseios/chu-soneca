@@ -1,0 +1,5 @@
+<Project>
+ <PropertyGroup>
+  <VpilotSdkDir Condition="'$(VpilotSdkDir)' == ''">$(LocalAppData)/vPilot</VpilotSdkDir>
+ </PropertyGroup>
+</Project>

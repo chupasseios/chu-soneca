@@ -1,0 +1,15 @@
+import test from 'node:test';import assert from 'node:assert/strict';
+import {boundaryNm,simulate} from '../engine/proximity-test.mjs';
+const geometry={type:'Polygon',coordinates:[[[0,0],[1,0],[1,1],[0,1],[0,0]]]};
+const pilot={cid:123456,callsign:'TEST123',logon_time:'2026-10-22T00:00:00Z',latitude:0.5,longitude:-0.5};
+function step(previous,longitude,timestamp,{inside=false,exitNm=15,unmapped=[],zones=[{geometry,controllers:['TEST_CTR']}]}={}){return simulate({previous,pilot:{...pilot,longitude},timestamp,exitNm,result:{controllers:inside?[{}]:[],unmapped,zones}});}
+test('spherical boundary distance in nautical miles',()=>{assert.ok(Math.abs(boundaryNm([-0.25,0.5],geometry)-15.01)<0.05);assert.ok(boundaryNm([0,0.5],geometry)<0.001);});
+test('approach crosses 15 NM, disconnects once, does not reconnect while approaching',()=>{let r=step(null,-0.4,1);assert.equal(r.events.length,0);r=step(r.state,-0.24,2);assert.match(r.events[0],/DESCONEXÃO/);r=step(r.state,-0.20,3,{exitNm:10});assert.equal(r.events.length,0);assert.equal(r.state.disconnected,true);});
+test('initial inside state immediately simulates disconnected',()=>{const r=step(null,0.5,1,{inside:true});assert.equal(r.state.disconnected,true);assert.match(r.events[0],/dentro/);});
+test('exit 15 NM holds until beyond margin',()=>{let r=step(null,0.5,1,{inside:true});r=step(r.state,1.2,2);assert.equal(r.events.length,0);r=step(r.state,1.3,3);assert.match(r.events[0],/RECONEXÃO/);r=step(r.state,1.4,4);assert.equal(r.events.length,0);});
+test('exit 10 NM selectable',()=>{let r=step(null,0.5,1,{inside:true});r=step(r.state,1.12,2,{exitNm:10});assert.equal(r.events.length,0);r=step(r.state,1.18,3,{exitNm:10});assert.match(r.events[0],/RECONEXÃO/);});
+test('outbound flight within entrance margin is not disconnected again',()=>{let r=step(null,0.5,1,{inside:true});r=step(r.state,1.18,2,{exitNm:10});assert.equal(r.state.disconnected,false);r=step(r.state,1.22,3,{exitNm:10});assert.equal(r.events.length,0);assert.equal(r.state.disconnected,false);});
+test('duplicates cannot replay event; unknown geometry blocks reconnect',()=>{let r=step(null,0.5,1,{inside:true});assert.equal(step(r.state,0.5,1,{inside:true}).events.length,0);r=step(r.state,1.5,2,{unmapped:['UNKNOWN_CTR']});assert.equal(r.state.disconnected,true);assert.equal(r.events.length,0);});
+test('holes and multipolygons have usable boundaries',()=>{const hole=[[.4,.4],[.6,.4],[.6,.6],[.4,.6],[.4,.4]];assert.ok(boundaryNm([.5,.5],{type:'MultiPolygon',coordinates:[[...geometry.coordinates,hole]]})<6.1);});
+test('dateline segment measures nearby edge without global wrap',()=>{const g={type:'Polygon',coordinates:[[[179,-1],[-179,-1],[-179,1],[179,1],[179,-1]]]};assert.ok(Math.abs(boundaryNm([178.75,0],g)-15.01)<0.05);});
+test('another session starts independently',()=>{let r=step(null,.5,1,{inside:true});r=simulate({previous:r.state,pilot:{...pilot,callsign:'NEW123'},timestamp:2,result:{controllers:[],unmapped:[],zones:[{geometry,controllers:['TEST_CTR']}]}});assert.equal(r.state.disconnected,false);});

@@ -1,0 +1,35 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.getTraconPrefixes = getTraconPrefixes;
+exports.getTraconSuffix = getTraconSuffix;
+exports.getLongestTraconPrefix = getLongestTraconPrefix;
+exports.getFacilityByCallsign = getFacilityByCallsign;
+function getTraconPrefixes(tracon) {
+    if (typeof tracon.properties?.prefix === 'object' && Array.isArray(tracon.properties.prefix))
+        return tracon.properties.prefix;
+    return [];
+}
+function getTraconSuffix(tracon) {
+    if (typeof tracon.properties?.suffix === 'string')
+        return tracon.properties.suffix;
+    return null;
+}
+function getLongestTraconPrefix(callsign, prefixes) {
+    return prefixes.reduce((matched, prefix) => callsign.startsWith(prefix) && prefix.length > matched.length ? prefix : matched, '');
+}
+const facilitiesMap = {
+    OBS: 0,
+    FSS: 1,
+    DEL: 2,
+    GND: 3,
+    RMP: -3,
+    TWR: 4,
+    APP: 5,
+    CTR: 6,
+};
+function getFacilityByCallsign(callsign) {
+    let postfix = callsign.split('_').at(-1);
+    if (postfix === 'DEP')
+        postfix = 'APP';
+    return facilitiesMap[postfix] ?? -1;
+}
