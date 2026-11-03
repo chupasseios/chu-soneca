@@ -13,3 +13,7 @@ Este pacote nÃ£o Ã© patrocinado, aprovado ou mantido pelo VATSIM Radar, VATS
 O Node.js v24.12.0 Ã© redistribuÃ­do com sua licenÃ§a completa. DependÃªncias JavaScript incluÃ­das no bundle: Turf, adm-zip, point-in-polygon-hao, robust-predicates, tslib e dependÃªncias auxiliares; respectivos avisos em `packaging/licenses/`. As licenÃ§as permissivas dessas dependÃªncias continuam aplicÃ¡veis a elas.
 
 Os datasets de VATSpy, SimAware e VATGlasses sÃ£o baixados das fontes durante o uso e nÃ£o estÃ£o embutidos no ZIP. A redistribuiÃ§Ã£o desses datasets em outro produto deve observar as licenÃ§as de seus respectivos projetos.
+
+## xPilot Plugin SDK
+
+Interfaces MIT de Justin Shannon (2026), fonte https://github.com/xpilot-project/plugin-sdk, commit e869405e2a340fac37fd51d3d167caff4523c121. Fontes e licença em `xpilot/sdk`; licença também acompanha o instalador.

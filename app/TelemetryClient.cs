@@ -4,10 +4,10 @@ using System.Threading.Tasks;
 using System.Web.Script.Serialization;
 using System.Windows.Forms;
 namespace FlightWatch {
- public sealed class TelemetryClient:IDisposable {
+ public sealed class TelemetryClient:ITelemetrySource {
   readonly Func<double> now;readonly Control owner;readonly string path;Process child;int generation;
   readonly RecoverySchedule recovery=new RecoverySchedule();Task stopping=Task.CompletedTask;bool enabled,starting;double last,healthySince=-1;
-  public Action<Telemetry> Received;public Action<string> Error;
+  public Action<Telemetry> Received {get;set;} public Action<string> Error {get;set;}
   public TelemetryClient(Func<double> time,Control form,string executable){now=time;owner=form;path=executable;}
   void Post(int token,Action action){try{if(!owner.IsDisposed&&owner.IsHandleCreated)owner.BeginInvoke(new Action(()=>{if(enabled&&token==generation)action();}));}catch(InvalidOperationException){}}
   public void Open(){enabled=true;recovery.Reset();StopChild();Tick();}

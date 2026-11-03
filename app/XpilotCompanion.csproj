@@ -1,0 +1,4 @@
+<Project Sdk="Microsoft.NET.Sdk">
+ <PropertyGroup><ApplicationIcon>Assets/soneca.ico</ApplicationIcon><TargetFramework>net48</TargetFramework><UseWindowsForms>true</UseWindowsForms><LangVersion>latest</LangVersion><AssemblyName>ChuSoneca.XpilotUI</AssemblyName><OutputType>Exe</OutputType><StartupObject>FlightWatch.XpilotCompanion</StartupObject><PlatformTarget>x86</PlatformTarget></PropertyGroup>
+ <ItemGroup><PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="all"/><Compile Remove="SimReader.cs;TelemetryHost.cs;Plugin.cs;Launcher.cs;Program.cs"/><Reference Include="System.Web.Extensions"/><Reference Include="System.Xml.Linq"/></ItemGroup>
+<ItemGroup><EmbeddedResource Include="Assets/soneca.png" LogicalName="ChuSoneca.Mascot"/><EmbeddedResource Include="Assets/soneca.ico" LogicalName="ChuSoneca.Icon"/></ItemGroup></Project>

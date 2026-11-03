@@ -1,0 +1,3 @@
+https://github.com/xpilot-project/plugin-sdk
+Commit: e869405e2a340fac37fd51d3d167caff4523c121
+SDK API 0.2.0.0, MIT. Sources unchanged.

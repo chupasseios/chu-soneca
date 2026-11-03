@@ -8,6 +8,8 @@ namespace FlightWatch {
   public string Cid {get;set;}="";
   public bool OpenWithVpilot {get;set;}=true;
   public bool CloseToTray {get;set;}=false;
-  public static Preferences Read(){try{return new JavaScriptSerializer().Deserialize<Preferences>(File.ReadAllText(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),"FlightWatch","preferences.json")))??new Preferences();}catch{return new Preferences();}}
+  public static string DataDirectory=>Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),"FlightWatch",IsXpilot?"xPilot":"");
+  public static bool IsXpilot;
+  public static Preferences Read(){try{return new JavaScriptSerializer().Deserialize<Preferences>(File.ReadAllText(Path.Combine(DataDirectory,"preferences.json")))??new Preferences();}catch{return new Preferences();}}
  }
 }

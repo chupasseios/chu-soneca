@@ -30,14 +30,15 @@ Run $node @($npm,'run','build','--prefix','engine')
 Run $node @($npm,'test','--prefix','engine')
 Run $node @('tests/boundary-fixtures.mjs')
 Run 'dotnet' @('run','--project','tests/StateTests.csproj','-c','Release')
-foreach ($project in @('tests/IdentityTests.csproj','app/FlightWatch.csproj','app/Demo.csproj','app/TelemetryHost.csproj','app/Launcher.csproj')) {
+foreach ($project in @('tests/IdentityTests.csproj','app/FlightWatch.csproj','app/Demo.csproj','app/TelemetryHost.csproj','app/Launcher.csproj','app/XpilotCompanion.csproj','xpilot/ChuSoneca.Xpilot.csproj','tests/XpilotTests.csproj')) {
  Run 'dotnet' @('build',$project,'-c','Release','--nologo',"-p:VpilotSdkDir=$build/sdk")
 }
 Run "$root/tests/bin/Release/net48/IdentityTests.exe" @()
+Run 'dotnet' @('tests/bin/Release/net10.0-windows/XpilotTests.dll')
 # Fresh staging: copy only tracked sources and explicitly selected artifacts.
 $stage = Join-Path $build ('stage-' + [Guid]::NewGuid().ToString('N'))
 $payload = Join-Path $stage 'setup/payload'
-New-Item -ItemType Directory -Path "$payload/plugin/FlightWatch","$payload/app/source","$payload/app/licenses" -Force | Out-Null
+New-Item -ItemType Directory -Path "$payload/plugin/FlightWatch","$payload/xpilot/ChuSoneca.Xpilot/FlightWatch","$payload/app/source","$payload/app/licenses" -Force | Out-Null
 $tracked = & git ls-files
 if ($LASTEXITCODE -ne 0 -or -not $tracked) { throw 'Build requires tracked source files' }
 foreach ($relative in $tracked) {
@@ -55,7 +56,12 @@ Copy-Item -LiteralPath $node -Destination "$payload/plugin/FlightWatch/node.exe"
 Copy-Item -LiteralPath "$build/node/node-v24.12.0-win-x64/LICENSE" -Destination "$payload/plugin/FlightWatch/LICENSE-Node.txt"
 foreach ($name in @('FlightWatch.Telemetry.exe','FlightWatch.Telemetry.exe.config')) { Copy-Item -LiteralPath "app/bin/Release/net48/$name" -Destination "$payload/plugin/FlightWatch" }
 foreach ($name in @('FlightWatch.Demo.exe','FlightWatch.Demo.exe.config','Chu-Soneca.exe','Chu-Soneca.exe.config')) { Copy-Item -LiteralPath "app/bin/Release/net48/$name" -Destination "$payload/app" }
-Copy-Item -Path 'packaging/licenses/*' -Destination "$payload/app/licenses"
+Copy-Item -LiteralPath 'xpilot/bin/Release/net10.0-windows/ChuSoneca.Xpilot.dll' -Destination "$payload/xpilot/ChuSoneca.Xpilot"
+foreach ($name in @('ChuSoneca.XpilotUI.exe','ChuSoneca.XpilotUI.exe.config')) { Copy-Item -LiteralPath "app/bin/Release/net48/$name" -Destination "$payload/xpilot/ChuSoneca.Xpilot" }
+Copy-Item -LiteralPath 'engine/dist/coverage.cjs' -Destination "$payload/xpilot/ChuSoneca.Xpilot/FlightWatch"
+Copy-Item -LiteralPath $node -Destination "$payload/xpilot/ChuSoneca.Xpilot/FlightWatch/node.exe"
+Copy-Item -LiteralPath 'xpilot/sdk/LICENSE' -Destination "$payload/app/licenses/LICENSE-xPilot-SDK.txt"
+Copy-Item -Path 'packaging/licenses/*'  -Destination "$payload/app/licenses"
 Copy-Item -LiteralPath 'README.md','ATRIBUICOES.md','packaging/CHANGELOG.txt' -Destination "$payload/app"
 Run 'dotnet' @('build',"$stage/setup/Uninstall.csproj",'-c','Release','--nologo')
 Copy-Item -LiteralPath "$stage/setup/bin/Release/net48/FlightWatch-Uninstall.exe" -Destination "$payload/app"

@@ -1,3 +1,11 @@
+0.8.0
+- Integração Windows com xPilot 4 (SDK 0.2.0.0) e telemetria local X-Plane por UDP 49000.
+- CID automático, eventos de conexão, mensagens de Supervisor e comandos pelo SDK oficial.
+- Janela em processo separado; sessão/CID e telemetria conferidos antes dos comandos.
+- Instalador com seleção vPilot/xPilot, coexistência, atalhos e preferências separados.
+- Mantida a margem fixa de 15 NM e a opção de reconexão manual.
+- Testes automatizados com broker simulado; validação em voo real xPilot/X-Plane pendente.
+
 0.7.3
 - Margem de saída fixa em 15 NM; removida a opção de 10 NM.
 - Nova preferência para permanecer desconectado e reconectar apenas manualmente.

@@ -1,9 +1,9 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
  <PropertyGroup><ApplicationIcon>Assets/soneca.ico</ApplicationIcon><TargetFramework>net48</TargetFramework><UseWindowsForms>true</UseWindowsForms><LangVersion>latest</LangVersion><Product>Chu Soneca</Product><Title>Chu Soneca</Title><AssemblyName>FlightWatch</AssemblyName><GenerateAssemblyInfo>true</GenerateAssemblyInfo><Version>0.7.0</Version><PlatformTarget>x86</PlatformTarget></PropertyGroup>
  <ItemGroup>
   <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="all" />
   <Reference Include="RossCarlson.Vatsim.Vpilot.Plugins"><HintPath>$(VpilotSdkDir)/RossCarlson.Vatsim.Vpilot.Plugins.dll</HintPath><Private>false</Private></Reference>
-  <Compile Remove="SimReader.cs;TelemetryHost.cs;Program.cs"/>
+  <Compile Remove="SimReader.cs;TelemetryHost.cs;Program.cs;XpilotCompanion.cs"/>
   <Reference Include="System.Web.Extensions"/><Reference Include="System.Xml.Linq"/>
  </ItemGroup>
 <ItemGroup><EmbeddedResource Include="Assets/soneca.png" LogicalName="ChuSoneca.Mascot"/><EmbeddedResource Include="Assets/soneca.ico" LogicalName="ChuSoneca.Icon"/></ItemGroup></Project>

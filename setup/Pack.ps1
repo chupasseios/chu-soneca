@@ -6,4 +6,4 @@ Get-ChildItem -LiteralPath $payloadRoot -Recurse -File | ForEach-Object {
     $hashes[$key] = (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash
 }
 $hashes | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $PSScriptRoot 'hashes.json') -Encoding utf8
-Compress-Archive -LiteralPath (Join-Path $payloadRoot 'plugin'),(Join-Path $payloadRoot 'app') -DestinationPath (Join-Path $PSScriptRoot 'payload.zip') -Force
+Compress-Archive -LiteralPath (Join-Path $payloadRoot 'plugin'),(Join-Path $payloadRoot 'xpilot'),(Join-Path $payloadRoot 'app') -DestinationPath (Join-Path $PSScriptRoot 'payload.zip') -Force

@@ -3,6 +3,7 @@
 !/.gitattributes
 !/.github/
 !/app/
+!/xpilot/
 !/engine/
 !/setup/
 !/tests/
