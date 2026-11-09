@@ -31,8 +31,8 @@ function closedGeometry(geometry){
  throw Error('Geometria de controle não suportada');
 }
 export async function evaluate({feed,vatspy,simaware,vg,dynamic,longitude,latitude,flightLevel,captureZones=false}){
- if(!Number.isFinite(longitude)||!Number.isFinite(latitude)||Math.abs(latitude)>90||Math.abs(longitude)>180||!Number.isFinite(flightLevel))throw Error('PosiÃ§Ã£o invÃ¡lida');
- if(!Array.isArray(feed.controllers)||!Array.isArray(feed.atis))throw Error('Feed invÃ¡lido');
+ if(!Number.isFinite(longitude)||!Number.isFinite(latitude)||Math.abs(latitude)>90||Math.abs(longitude)>180||!Number.isFinite(flightLevel))throw Error('Posição inválida');
+ if(!Array.isArray(feed.controllers)||!Array.isArray(feed.atis))throw Error('Feed inválido');
  const controllers=feed.controllers.filter(x=>x.facility!==0).map(x=>({...x,facility:shared.getFacilityByCallsign(x.callsign)})).filter(x=>x.facility!==-1&&x.facility!==0);
  const groups={};
  for(let f of simaware.features){if(f.features)f=f.features[0];for(const p of f.properties.prefix??[])(groups[p.split('_')[0]]??=[]).push(f);}

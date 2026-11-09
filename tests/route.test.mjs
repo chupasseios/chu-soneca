@@ -93,5 +93,10 @@ test('bundled worker returns the VATSIM flight level even if secondary geometry 
   const run=extra=>JSON.parse(spawnSync(process.execPath,['--require',hook,worker],{input:JSON.stringify({...request,cache:dir,...extra}),encoding:'utf8'}).stdout);
   const pending=run({});assert.equal(pending.ok,false);assert.equal(pending.flightPlan.altitude,'35000');assert.match(pending.error,/Pilot ID/);assert.ok(pending.planChecked);
   const planOnly=run({planOnly:true});assert.equal(planOnly.ok,true);assert.equal(planOnly.flightPlan.altitude,'35000');
+  const message='Área de controle sem três pontos distintos';
+  await writeFile(hook,`global.fetch=async()=>{throw Error(${JSON.stringify(message)});};`);
+  const output=spawnSync(process.execPath,['--require',hook,worker],{input:JSON.stringify(request)}).stdout;
+  assert.equal(JSON.parse(output.toString('latin1')).error,message);
+  assert.equal(JSON.parse(output.toString('utf8')).error,message);
  }finally{await rm(dir,{recursive:true,force:true});}
 });

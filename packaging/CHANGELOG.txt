@@ -1,3 +1,6 @@
+0.8.2
+- Acentuação corrigida nas mensagens exibidas em Preferências e no texto sobre descida.
+
 0.8.1
 - Plano VATSIM automático pelo CID e indicativo. SimBrief opcional para complementar coordenadas quando necessário.
 - Falhas de importação preservam o monitoramento e o nível publicado na VATSIM.

@@ -63,6 +63,11 @@ async function staticData(cache){
  const c={created:Date.now(),vatspy:compileVatSpy(map.current_commit_hash,dat,geo),simaware,vg,versions:{vatspy:map.current_commit_hash,simaware:release.tag_name,vgFetched:new Date().toISOString()}};
  await fs.mkdir(cache,{recursive:true});await fs.writeFile(file+'.tmp',JSON.stringify(c));await fs.rename(file+'.tmp',file);return c;
 }
+function writeResult(result){
+ const json=JSON.stringify(result).replace(/[^\x00-\x7f]/g, unit =>
+  '\\u'+unit.charCodeAt(0).toString(16).padStart(4,'0'));
+ process.stdout.write(json);
+}
 async function main(){
 const context = {};
 let input='';for await(const chunk of process.stdin)input+=chunk;
@@ -70,7 +75,7 @@ try {
  const request=JSON.parse(input);
  if(request.mode==='supervisor'){
   const feed=await get('https://data.vatsim.net/v3/vatsim-data.json');
-  process.stdout.write(JSON.stringify(confirmSupervisor(feed,request.sender,request.messageTimeUtc)));return;
+  writeResult(confirmSupervisor(feed,request.sender,request.messageTimeUtc));return;
  }
  const feed=await get('https://data.vatsim.net/v3/vatsim-data.json');
  const timestamp=Date.parse(feed.general?.update_timestamp);const age=Date.now()-timestamp;
@@ -83,7 +88,7 @@ try {
   context.planChecked=Boolean(request.connected || pilot);
   context.flightPlan=pilot?.flight_plan?{cid:String(pilot.cid),callsign:pilot.callsign,departure:pilot.flight_plan.departure,arrival:pilot.flight_plan.arrival,altitude:pilot.flight_plan.altitude}:null;
   if(matches.length && !pilot)throw Error('CID ou indicativo divergente na VATSIM.');
-  if(request.planOnly){process.stdout.write(JSON.stringify({ok:true,...context}));return;}
+  if(request.planOnly){writeResult({ok:true,...context});return;}
  }
  const [datasets,dynamic]=await Promise.all([staticData(request.cache),get('https://api3.vatglasses.uk/live/activeownership')]);
  if(request.mode==='remoteTest'){
@@ -92,7 +97,7 @@ try {
   const pilot=matches[0];
   const result=await evaluate({...datasets,feed,dynamic,longitude:pilot.longitude,latitude:pilot.latitude,flightLevel:pilot.altitude/100,captureZones:true});
   const test=simulate({previous:request.previous,pilot,timestamp,result,exitNm:request.exitNm});
-  process.stdout.write(JSON.stringify({ok:true,...test,timestamp,callsign:pilot.callsign,latitude:pilot.latitude,longitude:pilot.longitude,altitude:pilot.altitude,unmapped:result.unmapped}));return;
+  writeResult({ok:true,...test,timestamp,callsign:pilot.callsign,latitude:pilot.latitude,longitude:pilot.longitude,altitude:pilot.altitude,unmapped:result.unmapped});return;
  }
  context.routeChecked=true;
  const route=await chooseRoute({request,pilot,airports:datasets.vatspy.keyAirports.realIcao,lookup:ids=>lookupFixes(ids,request.cache),fetchOfp});
@@ -105,7 +110,7 @@ try {
  const onlineControllers=(feed.controllers??[]).map(c=>({cid:String(c.cid),callsign:c.callsign,frequency:c.frequency,logon_time:c.logon_time}));
  const boundary=pluginBoundary({previous,pilot:{cid:request.cid,callsign:request.callsign,logon_time:request.sessionId,longitude:request.longitude,latitude:request.latitude},timestamp:request.sampleTimeUtc,result,exitNm:request.exitNm},onlineControllers);
  delete result.zones;
- process.stdout.write(JSON.stringify({ok:true,...result,boundary,onlineControllers,timestamp,dataAgeSeconds:(Date.now()-timestamp)/1000,versions:datasets.versions,...context}));
-}catch(e){process.stdout.write(JSON.stringify({ok:false,error:e.message,...context}));process.exitCode=1;}
+ writeResult({ok:true,...result,boundary,onlineControllers,timestamp,dataAgeSeconds:(Date.now()-timestamp)/1000,versions:datasets.versions,...context});
+}catch(e){writeResult({ok:false,error:e.message,...context});process.exitCode=1;}
 }
 main();
