@@ -32,6 +32,9 @@ class IdentityTests {
  var serializer=new System.Web.Script.Serialization.JavaScriptSerializer();
  var legacy=serializer.Deserialize<Preferences>("{\"ExitMarginNm\":10}");Check(!legacy.DisableAutoReconnect&&m.ExitMarginNm==15,"legacy 10 NM preference cannot change fixed 15 NM margin");
  Check(serializer.Deserialize<Preferences>(serializer.Serialize(new Preferences{DisableAutoReconnect=true})).DisableAutoReconnect,"manual reconnect preference persists");
+ m.Start();var sessionBeforeSave=m.SessionId;
+ typeof(FlightWindow).GetMethod("SaveRouteSource",BindingFlags.Instance|BindingFlags.NonPublic).Invoke(w,null);
+ Check(m.Armed&&m.SessionId==sessionBeforeSave,"saving secondary source preserves active flight monitoring");
  XPlaneTests.Run();
  w.Shutdown();}return 0;}catch(Exception ex){Console.Error.WriteLine(ex);return 1;}}
 }

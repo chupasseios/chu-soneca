@@ -1,3 +1,7 @@
+0.8.1
+- Plano VATSIM automático pelo CID e indicativo. SimBrief opcional para complementar coordenadas quando necessário.
+- Falhas de importação preservam o monitoramento e o nível publicado na VATSIM.
+
 0.8.0
 - Integração Windows com xPilot 4 (SDK 0.2.0.0) e telemetria local X-Plane por UDP 49000.
 - CID automático, eventos de conexão, mensagens de Supervisor e comandos pelo SDK oficial.

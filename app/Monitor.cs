@@ -22,6 +22,9 @@ namespace FlightWatch {
   public Controller[] onlineControllers {get;set;}
   public double Received, Sampled; public long timestamp {get;set;} public double dataAgeSeconds {get;set;}
   public string routeStatus {get;set;}
+  public object routeSnapshot {get;set;}
+  public bool planChecked {get;set;}
+  public bool routeChecked {get;set;}
   public Plan flightPlan {get;set;}
  }
  public sealed class Plan {public string departure {get;set;} public string arrival {get;set;} public string altitude {get;set;} public string cid {get;set;} public string callsign {get;set;}}

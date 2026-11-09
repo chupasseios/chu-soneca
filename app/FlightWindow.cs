@@ -20,14 +20,17 @@ namespace FlightWatch {
   readonly CheckBox closeToTray=new CheckBox{Text="Ao fechar, manter na bandeja",AutoSize=true};
   readonly RecoverySchedule feedRecovery=new RecoverySchedule();
   readonly TextBox simbrief=new TextBox{Width=220};
-  readonly Label routeLabel=new Label{AutoSize=true,MaximumSize=new Size(630,0),Text="Importe o plano do SimBrief para validar os controles na rota."};
-  object importedRoute;bool routeValidated;
-  sealed class RouteImport {public bool ok {get;set;} public string error {get;set;} public object route {get;set;}}
-  async Task ImportRoute(){
-   if(busy)return;monitor.Stop();epoch++;int generation=epoch;busy=true;routeValidated=false;importedRoute=null;routeLabel.Text="Importando rota do SimBrief…";SaveSettings();Render();string user=simbrief.Text.Trim();
-   try{var data=await Task.Run(()=>RunEngine(json.Serialize(new {mode="importRoute",simbrief=user})));if(closing||generation!=epoch)return;var response=json.Deserialize<RouteImport>(data);if(!response.ok)throw new Exception(response.error);importedRoute=response.route;routeLabel.Text="Rota importada. Será validada com o voo conectado antes das ações.";Log(routeLabel.Text);nextPoll=0;}
-   catch(Exception ex){if(!closing&&generation==epoch){routeLabel.Text="Importação falhou: "+ex.Message;Log(routeLabel.Text);}}
-   finally{busy=false;if(!closing)Render();}
+  readonly Label routeLabel=new Label{AutoSize=true,MaximumSize=new Size(630,0),Text="Aguardando o plano de voo da VATSIM."};
+  object routeSnapshot;
+  bool routeValidated;
+  string secondaryAccount="";
+  void SaveRouteSource(){
+   secondaryAccount=simbrief.Text.Trim();
+   SaveSettings();
+   epoch++;
+   nextPoll=0;
+   routeLabel.Text=secondaryAccount==""?"SimBrief desativado. Consultando o plano VATSIM.":"Fonte secundária salva. Consultando o plano VATSIM.";
+   Log(routeLabel.Text);
   }
   readonly Monitor monitor=new Monitor();readonly Stopwatch clock=Stopwatch.StartNew();readonly bool demo;
   readonly JavaScriptSerializer json=new JavaScriptSerializer{MaxJsonLength=8000000};
@@ -75,14 +78,14 @@ namespace FlightWatch {
   }
   void AdaptClientLabels(Control parent){if(!xpilot)return;foreach(Control c in parent.Controls){c.Text=c.Text.Replace("vPilot","xPilot");AdaptClientLabels(c);}}
   void Changed(){if(loading)return;EndHistory();monitor.Stop();epoch++;monitor.ApplyFlightPlan(null);nextPoll=0;Log("Configuração alterada. Reinicie o monitoramento.");SaveSettings();Render();}
-  void LoadSettings(){try{var p=Preferences.Read();simbrief.Text=p.Simbrief;openWithVpilot.Checked=p.OpenWithVpilot;closeToTray.Checked=p.CloseToTray;disableAutoReconnect.Checked=p.DisableAutoReconnect;monitor.DisableAutoReconnect=p.DisableAutoReconnect;}catch{}}
-  void SaveSettings(){if(loading||demo)return;try{Directory.CreateDirectory(dataDir);File.WriteAllText(Path.Combine(dataDir,"preferences.json"),json.Serialize(new Preferences{Simbrief=simbrief.Text.Trim(),Cid="",OpenWithVpilot=openWithVpilot.Checked,CloseToTray=closeToTray.Checked,DisableAutoReconnect=monitor.DisableAutoReconnect}));}catch(Exception e){Log("Não foi possível salvar: "+e.Message);}}
+  void LoadSettings(){try{var p=Preferences.Read();secondaryAccount=p.Simbrief??"";simbrief.Text=secondaryAccount;openWithVpilot.Checked=p.OpenWithVpilot;closeToTray.Checked=p.CloseToTray;disableAutoReconnect.Checked=p.DisableAutoReconnect;monitor.DisableAutoReconnect=p.DisableAutoReconnect;}catch{}}
+  void SaveSettings(){if(loading||demo)return;try{Directory.CreateDirectory(dataDir);File.WriteAllText(Path.Combine(dataDir,"preferences.json"),json.Serialize(new Preferences{Simbrief=secondaryAccount,Cid="",OpenWithVpilot=openWithVpilot.Checked,CloseToTray=closeToTray.Checked,DisableAutoReconnect=monitor.DisableAutoReconnect}));}catch(Exception e){Log("Não foi possível salvar: "+e.Message);}}
   string Fingerprint(){var config=Path.Combine(Directory.GetParent(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)).FullName,"vPilotConfig.xml");
    using(var reader=XmlReader.Create(config,new XmlReaderSettings{DtdProcessing=DtdProcessing.Prohibit,XmlResolver=null})){
     while(reader.Read()){if(reader.NodeType!=XmlNodeType.Element||reader.Name!="NetworkLogin")continue;string login=reader.ReadElementContentAsString();if(string.IsNullOrWhiteSpace(login))return "";using(var sha=SHA256.Create())return Convert.ToBase64String(sha.ComputeHash(Encoding.UTF8.GetBytes(login)));}return "";
    }}
   public bool AccountUnchanged(){if(demo)return true;if(xpilot)return ExternalSessionValid?.Invoke()==true;try{return loginFingerprint!=""&&Fingerprint()==loginFingerprint;}catch{return false;}}
-  public void NetworkConnected(string id,string call,string type,string selcal,bool observer,string hostSession="demo"){if(!monitor.AwaitingReconnect)EndHistory();epoch++;HostSessionId=hostSession;routeValidated=false;if(!xpilot)try{loginFingerprint=Fingerprint();}catch{loginFingerprint="";}monitor.SelectedCid=id??"";cid.Text=monitor.SelectedCid;monitor.Connect(monitor.SelectedCid,call,type,Now);if(observer){monitor.Stop();monitor.Status="Modo observador: automação bloqueada.";}Log("vPilot conectado: "+call+" · CID "+id);nextPoll=0;Render();}
+  public void NetworkConnected(string id,string call,string type,string selcal,bool observer,string hostSession="demo"){if(!monitor.AwaitingReconnect)EndHistory();epoch++;HostSessionId=hostSession;routeValidated=false;routeSnapshot=null;routeLabel.Text="Aguardando o plano de voo da VATSIM.";if(!xpilot)try{loginFingerprint=Fingerprint();}catch{loginFingerprint="";}monitor.SelectedCid=id??"";cid.Text=monitor.SelectedCid;monitor.Connect(monitor.SelectedCid,call,type,Now);if(observer){monitor.Stop();monitor.Status="Modo observador: automação bloqueada.";}Log("vPilot conectado: "+call+" · CID "+id);nextPoll=0;Render();}
   public Telemetry CurrentTelemetry=>monitor.Telemetry;
   public bool CanRequest(bool reconnect)=>monitor.CanCommand(reconnect,Now,AccountUnchanged());
   public void NetworkDisconnected(){epoch++;monitor.Disconnected(Now);Log(monitor.Status);nextPoll=Now;Render();}
@@ -110,22 +113,40 @@ namespace FlightWatch {
   }
   async Task Poll(){
    if(demo){monitor.Coverage=new Coverage{ok=true,Received=Now,Sampled=Now,controllers=new[]{new Controller{cid="123456",callsign="DEMO_CTR",frequency="125.000",logon_time="demo"}}};monitor.Coverage.boundary=new Boundary{ready=true,exitNm=monitor.ExitMarginNm,inside=true,controllers=monitor.Coverage.controllers};return;}
-   var t=monitor.Telemetry;if(t==null||!t.Fresh(Now))return;
+   var t=monitor.Telemetry;bool planOnly=t==null||!t.Fresh(Now);
    busy=true;int requestEpoch=epoch;double sampled=Now;
    try{
-    var request=json.Serialize(new {cid=monitor.SelectedCid,callsign=monitor.Callsign,sessionId=monitor.SessionId,route=importedRoute,routeValidated=routeValidated,previousBoundary=monitor.BoundaryState,exitNm=monitor.ExitMarginNm,sampleTimeUtc=DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),longitude=t.Longitude,latitude=t.Latitude,flightLevel=t.Altitude/100,cache=Path.Combine(dataDir,"cache")});
+    var request=json.Serialize(new {cid=monitor.SelectedCid,callsign=monitor.Callsign,sessionId=monitor.SessionId,routeSnapshot,simbrief=secondaryAccount,connected=monitor.Connected,ownedDisconnect=monitor.OwnedDisconnect,planOnly,previousBoundary=monitor.BoundaryState,exitNm=monitor.ExitMarginNm,sampleTimeUtc=DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),longitude=t?.Longitude,latitude=t?.Latitude,flightLevel=t?.Altitude/100,cache=Path.Combine(dataDir,"cache")});
     var result=await Task.Run(()=>RunEngine(request));
     if(closing||IsDisposed||requestEpoch!=epoch||(!monitor.Armed&&!monitor.Connected))return;
     var response=json.Deserialize<Coverage>(result);response.Received=Now;response.Sampled=sampled;
-    monitor.Coverage=response;if(response.ok){routeValidated=true;routeLabel.Text=response.routeStatus??"Rota validada";monitor.BoundaryState=response.boundary?.state;var previousPlan=monitor.PlanStatus;monitor.ApplyFlightPlan(response.flightPlan);if(previousPlan!=monitor.PlanStatus)Log("Nível automático: "+monitor.PlanStatus);}if(monitor.Armed){history.Observe(response,DateTime.UtcNow,monitor.Callsign);SaveHistory();}
+    if(response.planChecked){
+     var previousPlan=monitor.PlanStatus;
+     monitor.ApplyFlightPlan(response.flightPlan);
+     if(previousPlan!=monitor.PlanStatus)Log("Plano VATSIM: "+monitor.PlanStatus);
+    }
+    if(planOnly && response.ok){
+     routeValidated=false;
+     routeLabel.Text=response.flightPlan==null?"Aguardando plano VATSIM.":"Plano VATSIM recebido. Aguardando telemetria para conferir a rota.";
+     nextPoll=monitor.Telemetry?.Fresh(Now)==true?0:Now+60;
+     return;
+    }
+    if(response.routeChecked)routeSnapshot=response.routeSnapshot;
+    routeValidated=response.ok;
+    monitor.Coverage=response;
+    if(response.ok){
+     routeLabel.Text=response.routeStatus;
+     monitor.BoundaryState=response.boundary?.state;
+    }
+    if(monitor.Armed){history.Observe(response,DateTime.UtcNow,monitor.Callsign);SaveHistory();}
     controllers.Items.Clear();foreach(var c in response.boundary?.controllers??new Controller[0])controllers.Items.Add(new ListViewItem(new[]{c.callsign,c.frequency,c.cid}));
-    if(!response.ok){nextPoll=Now+feedRecovery.Fail(Now);routeLabel.Text=response.error;Log("Consulta falhou: "+response.error);}
+    if(!response.ok){nextPoll=Now+(response.routeChecked?60:feedRecovery.Fail(Now));routeLabel.Text=response.error;Log((response.routeChecked&&response.flightPlan!=null?"Plano VATSIM recebido. Rota pendente: ":"Consulta falhou: ")+response.error);}
     else {feedRecovery.Reset();nextPoll=Math.Max(Now,sampled+60);Log("Consulta concluída: "+response.controllers.Length+" controlador(es) na posição.");if(response.unmapped.Length>0)Log("Retorno bloqueado enquanto houver posições sem geometria: "+string.Join(", ",response.unmapped.Take(8)));}
    }catch(Exception e){if(!closing&&!IsDisposed&&requestEpoch==epoch){monitor.InvalidateCoverage();nextPoll=Now+feedRecovery.Fail(Now);Log("Consulta indisponível: "+e.Message);}}
    finally{busy=false;if(!closing&&!IsDisposed)Render();}
   }
   string RunEngine(string request){
-   var startInfo=new ProcessStartInfo(Path.Combine(assets,"node.exe"),"\""+Path.Combine(assets,"coverage.cjs")+"\""){UseShellExecute=false,CreateNoWindow=true,RedirectStandardInput=true,RedirectStandardOutput=true,RedirectStandardError=true};
+   var startInfo=new ProcessStartInfo(Path.Combine(assets,"node.exe"),"\""+Path.Combine(assets,"coverage.cjs")+"\""){UseShellExecute=false,CreateNoWindow=true,RedirectStandardInput=true,RedirectStandardOutput=true,RedirectStandardError=true,StandardOutputEncoding=Encoding.UTF8,StandardErrorEncoding=Encoding.UTF8};
    using(var p=new Process{StartInfo=startInfo}){
     lock(workerGate){if(closing)throw new OperationCanceledException();p.Start();workers.Add(p);}
     try{
@@ -157,7 +178,9 @@ namespace FlightWatch {
    planLevel.ForeColor=!connected?ChuSoneca.UI.NightTheme.Red:monitor.CruiseFL>0?ChuSoneca.UI.NightTheme.Green:ChuSoneca.UI.NightTheme.Yellow;
    details.ForeColor=!connected?ChuSoneca.UI.NightTheme.Red:telemetry?ChuSoneca.UI.NightTheme.Green:ChuSoneca.UI.NightTheme.Yellow;
    routeLabel.ForeColor=routeValidated?ChuSoneca.UI.NightTheme.Green:ChuSoneca.UI.NightTheme.Yellow;
-   if(connected&&monitor.Armed&&importedRoute==null&&!demo)status.Text="Importe a rota do SimBrief em Preferências";
+
+   if(connected&&monitor.Armed&&!alert&&!monitor.AwaitingDisconnect&&!monitor.DescentPending&&monitor.AirborneSafe(Now)&&c?.routeChecked==true&&c.flightPlan!=null&&c.routeSnapshot==null)
+    status.Text="Plano VATSIM recebido · aguardando coordenadas da rota";
    bool ready=connected&&monitor.Armed&&monitor.CruiseFL>0&&fresh&&telemetry&&monitor.AirborneSafe(Now)&&!alert;
    status.ForeColor=!connected?ChuSoneca.UI.NightTheme.Red:ready?ChuSoneca.UI.NightTheme.Green:ChuSoneca.UI.NightTheme.Yellow;
    if(!connected&&!monitor.Armed)status.Text="Aguardando conexão vPilot";

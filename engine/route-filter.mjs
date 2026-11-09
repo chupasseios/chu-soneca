@@ -1,18 +1,34 @@
 import pointInPolygon from '@turf/boolean-point-in-polygon';
 import {boundaryNm,legDistanceNm} from './proximity-test.mjs';
 const valid=p=>Array.isArray(p)&&p.length===2&&p.every(Number.isFinite)&&Math.abs(p[0])<=180&&Math.abs(p[1])<=90;
-export function normalizedRoute(text){let words=String(text??'').toUpperCase().split(/\s+/).map(x=>x.split('/')[0]).filter(x=>x&&!/^[NM]\d{4}[FA]\d{3}$/.test(x));for(let i=0;i<words.length-2;i++)if(/^[A-Z]{1,2}\d+$/.test(words[i])&&words[i]===words[i+2]){words.splice(i+1,2);i--;}return words.join(' ');}
+export function normalizedRoute(text){
+ const words=String(text??'').trim().toUpperCase().split(/\s+/).filter(x=>x&&!/^[NM]\d{4}[FA]\d{3}$/.test(x));
+ for(let i=0;i<words.length-2;i++){
+  if(/^[A-Z]{1,2}\d+$/.test(words[i]) && words[i]===words[i+2] && /\/[NM]\d{4}[FA]\d{3}$/.test(words[i+1])){
+   words.splice(i+1,2);i--;
+  }
+ }
+ return words.map(word=>word.replace(/\/[NM]\d{4}[FA]\d{3}$/, '')).join(' ');
+}
 export function importOfp(ofp){
- const fixes=ofp.navlog?.fix; if(!Array.isArray(fixes)||fixes.length<2)throw Error('SimBrief sem navlog detalhado. Gere o plano com Detailed Navlog.');
- const points=[ofp.origin,...fixes,ofp.destination].map(x=>[Number(x.pos_long),Number(x.pos_lat)]);
+ if(!ofp?.origin?.icao_code || !ofp?.destination?.icao_code || !ofp?.general)throw Error('OFP ausente ou incompleto. Confira a conta e gere o plano no SimBrief.');
+ const raw=ofp.navlog?.fix; const fixes=Array.isArray(raw)?raw:raw?.ident?[raw]:[]; if(!fixes.length)throw Error('SimBrief sem navlog detalhado. Gere o plano com Detailed Navlog.');
+ const number=value=>value==null||String(value).trim()===''?NaN:Number(value);
+ const points=[ofp.origin,...fixes,ofp.destination].map(x=>[number(x?.pos_long),number(x?.pos_lat)]);
  if(points.some(p=>!valid(p)))throw Error('SimBrief com coordenadas inválidas');
- return {departure:ofp.origin.icao_code,arrival:ofp.destination.icao_code,callsign:String(ofp.general.icao_airline??'')+String(ofp.general.flight_number??''),route:ofp.general.route,points,imported:Date.now()};
+ return {departure:ofp.origin.icao_code,arrival:ofp.destination.icao_code,callsign:String(ofp.atc?.callsign || (String(ofp.general?.icao_airline??'')+String(ofp.general?.flight_number??''))).trim().toUpperCase(),route:typeof ofp.atc?.route==='string' && ofp.atc.route.trim() ? ofp.atc.route : ofp.general.route,points,imported:Date.now()};
 }
 export function verifyRoute(route,pilot){
- if(!route||!Array.isArray(route.points)||route.points.length<2||route.points.some(p=>!valid(p)))throw Error('Importe a rota do SimBrief em Preferências.');
+ if(!route||!Array.isArray(route.points)||route.points.length<2||route.points.some(p=>!valid(p)))throw Error('Navlog do SimBrief sem coordenadas válidas.');
  if(route.callsign!==pilot.callsign||route.departure!==pilot.flight_plan?.departure||route.arrival!==pilot.flight_plan?.arrival)throw Error('Plano SimBrief não corresponde ao callsign/origem/destino do voo VATSIM.');
- const a=normalizedRoute(route.route),b=normalizedRoute(pilot.flight_plan.route);
- if(!b||!(a===b||/^[A-Z]{3,6}[0-9][A-Z]?$/.test(a.split(' ')[0])&&a.split(' ').slice(1).join(' ')===b))throw Error('Rota VATSIM diferente do SimBrief. Atualize e importe o plano novamente.');
+ const compare=text=>{
+  const words=normalizedRoute(text).split(' ');
+  if(words[0].split('/')[0]===route.departure)words.shift();
+  if(words.at(-1)?.split('/')[0]===route.arrival)words.pop();
+  return words.filter(w=>w!=='DCT').join(' ') || (words.includes('DCT')?'DCT':'');
+ };
+ const a=compare(route.route),b=compare(pilot.flight_plan.route);
+ if(!b||!(a===b||/^[A-Z]{3,6}[0-9][A-Z]?$/.test(a.split(' ')[0])&&a.split(' ').slice(1).join(' ')===b))throw Error('Rota VATSIM diferente do SimBrief. Confira se o último plano gerado corresponde ao enviado para a rede.');
 }
 const unwrap=(x,ref)=>{while(x-ref>180)x-=360;while(x-ref< -180)x+=360;return x;};
 function cross(a,b,c){return (b[0]-a[0])*(c[1]-a[1])-(b[1]-a[1])*(c[0]-a[0]);}
@@ -27,7 +43,7 @@ export function routeCrosses(points,geometry){
   }
  }return false;
 }
-export function remainingRoute(points,position){let best=Infinity,index=1;for(let i=1;i<points.length;i++){const d=legDistanceNm(position,points[i-1],points[i]);if(d<best){best=d;index=i;}}if(best>30)throw Error('Aeronave a mais de 30 NM da rota importada. Reimporte a rota atual.');return [position,...points.slice(index)];}
+export function remainingRoute(points,position){let best=Infinity,index=1;for(let i=1;i<points.length;i++){const d=legDistanceNm(position,points[i-1],points[i]);if(d<best){best=d;index=i;}}if(best>30)throw Error('Aeronave a mais de 30 NM da rota validada. Aguardando retorno à rota.');return [position,...points.slice(index)];}
 export function filterRoute(result,route,position,previous,exitNm=15){
  const remaining=remainingRoute(route.points,position);
  const protectedNames=new Set(previous?.disconnected?String(previous.signature).split('|'):[]);

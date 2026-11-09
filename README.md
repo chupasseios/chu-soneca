@@ -6,7 +6,7 @@ Aplicativo Windows integrado ao vPilot e ao xPilot 4 para acompanhar controlador
 
 Baixe `Chu-Soneca-Setup-X.Y.Z.exe` em **Releases**. Feche o vPilot e o xPilot antes de instalar ou atualizar. O instalador não encerra o cliente em execução.
 
-O CID vem automaticamente da sessão do cliente escolhido. Em Preferências, informe seu usuário/Pilot ID do SimBrief, importe o plano e inicie o monitoramento. Reimporte quando mudar de plano. O SimBrief é consultado somente por ação do usuário.
+O CID vem automaticamente da sessão do cliente escolhido. Inicie o monitoramento após conectar. O plano enviado à VATSIM fornece origem, destino, nível e rota. Trechos diretos usam aeroportos VATSpy, coordenadas ICAO (incluindo abreviações do Atlântico Norte), fixos do Aviation Weather Center e auxílios do OurAirports com posição identificada sem ambiguidade. Para aerovias, SID, STAR ou pontos sem coordenadas, salve opcionalmente seu usuário ou Pilot ID do SimBrief em Preferências. O app consulta o último navlog e confere indicativo, aeroportos e rota com o plano da rede. Uma falha na consulta mantém o monitoramento e o nível do plano VATSIM. As ações por cobertura aguardam a geometria validada.
 
 - Centros: interseção com o trecho restante da rota; alerta dentro da área ou em aproximação a 15 NM.
 - APP/DEP: raio de 65 NM do aeroporto associado.
@@ -59,7 +59,7 @@ A partir da 0.8.0, o instalador oferece **vPilot · Microsoft Flight Simulator**
 1. Instale e abra o xPilot 4 uma vez; feche os dois clientes antes de instalar.
 2. Selecione xPilot no instalador. A pasta de dados é `%LOCALAPPDATA%/org.vatsim.xpilot` (o comando `.plugins` do xPilot abre a subpasta Plugins).
 3. Abra X-Plane e xPilot no **mesmo computador**, com o X-Plane recebendo UDP na porta padrão **49000**. A telemetria usa assinaturas RREF somente de leitura, duas vezes por segundo. Dados ausentes, incompletos, inválidos ou antigos bloqueiam ações; a assinatura é refeita automaticamente. Portas personalizadas e simulador remoto não são suportados nesta etapa.
-4. Conecte-se pelo xPilot: o CID e callsign vêm do evento do cliente, sem digitação. Importe a rota e inicie o monitoramento na janela Chu Soneca.
+4. Conecte-se pelo xPilot: o CID e callsign vêm do evento do cliente, sem digitação. Confira o plano VATSIM e inicie o monitoramento na janela Chu Soneca.
 5. Abertura manual pelo atalho **Chu Soneca - xPilot**, com xPilot aberto. A opção de abrir com o cliente e a de fechar completamente estão disponíveis também nesta integração.
 
 O instalador pode ser executado novamente para adicionar a outra integração, mantendo a anterior. Ao atualizar qualquer opção, atualiza também a outra integração já registrada. A desinstalação remove ambas as integrações deste produto e preserva outros plugins. Preferências e históricos xPilot ficam em `%LOCALAPPDATA%/FlightWatch/xPilot`, separados dos do vPilot.
